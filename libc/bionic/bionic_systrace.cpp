@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 #include <cutils/trace.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -30,6 +31,7 @@
 
 #define WRITE_OFFSET   32
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 constexpr char SYSTRACE_PROPERTY_NAME[] = "debug.atrace.tags.enableflags";
 
 static Lock g_lock;
@@ -82,8 +84,10 @@ static int get_trace_marker_fd() {
   g_lock.unlock();
   return g_trace_marker_fd;
 }
+#endif
 
 ScopedTrace::ScopedTrace(const char* message) {
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   if (!should_trace()) {
     return;
   }
@@ -102,9 +106,11 @@ ScopedTrace::ScopedTrace(const char* message) {
   // Tracing may stop just after checking property and before writing the message.
   // So the write is acceptable to fail. See b/20666100.
   TEMP_FAILURE_RETRY(write(trace_marker_fd, buf, len));
+#endif
 }
 
 ScopedTrace::~ScopedTrace() {
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   if (!should_trace()) {
     return;
   }
@@ -115,4 +121,5 @@ ScopedTrace::~ScopedTrace() {
   }
 
   TEMP_FAILURE_RETRY(write(trace_marker_fd, "E", 1));
+#endif
 }

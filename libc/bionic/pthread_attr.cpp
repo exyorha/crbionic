@@ -114,6 +114,7 @@ int pthread_attr_setstack(pthread_attr_t* attr, void* stack_base, size_t stack_s
   return 0;
 }
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 static int __pthread_attr_getstack_main_thread(void** stack_base, size_t* stack_size) {
   ErrnoRestorer errno_restorer;
 
@@ -150,6 +151,7 @@ static int __pthread_attr_getstack_main_thread(void** stack_base, size_t* stack_
   }
   __libc_fatal("No [stack] line found in \"%s\"!", path);
 }
+#endif
 
 int pthread_attr_getstack(const pthread_attr_t* attr, void** stack_base, size_t* stack_size) {
   *stack_base = attr->stack_base;
@@ -167,6 +169,7 @@ int pthread_attr_getguardsize(const pthread_attr_t* attr, size_t* guard_size) {
   return 0;
 }
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 int pthread_getattr_np(pthread_t t, pthread_attr_t* attr) {
   pthread_internal_t* thread = reinterpret_cast<pthread_internal_t*>(t);
   *attr = thread->attr;
@@ -182,6 +185,7 @@ int pthread_getattr_np(pthread_t t, pthread_attr_t* attr) {
   }
   return 0;
 }
+#endif
 
 int pthread_attr_setscope(pthread_attr_t*, int scope) {
   if (scope == PTHREAD_SCOPE_SYSTEM) {

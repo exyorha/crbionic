@@ -51,11 +51,13 @@ static bool __sysconf_has_clock(clockid_t clock_id) {
   return clock_getres(clock_id, NULL) == 0;
 }
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 static long __sysconf_rlimit(int resource) {
   rlimit rl;
   getrlimit(resource, &rl);
   return rl.rlim_cur;
 }
+#endif
 
 long sysconf(int name) {
   switch (name) {
@@ -64,13 +66,17 @@ long sysconf(int name) {
     case _SC_BC_DIM_MAX:        return _POSIX2_BC_DIM_MAX;    // Minimum requirement.
     case _SC_BC_SCALE_MAX:      return _POSIX2_BC_SCALE_MAX;  // Minimum requirement.
     case _SC_BC_STRING_MAX:     return _POSIX2_BC_STRING_MAX; // Minimum requirement.
+#ifndef COMPATIBILITY_RUNTIME_BUILD
     case _SC_CHILD_MAX:         return __sysconf_rlimit(RLIMIT_NPROC);
+#endif
     case _SC_CLK_TCK:           return static_cast<long>(getauxval(AT_CLKTCK));
     case _SC_COLL_WEIGHTS_MAX:  return _POSIX2_COLL_WEIGHTS_MAX;  // Minimum requirement.
     case _SC_EXPR_NEST_MAX:     return _POSIX2_EXPR_NEST_MAX;     // Minimum requirement.
     case _SC_LINE_MAX:          return _POSIX2_LINE_MAX;          // Minimum requirement.
     case _SC_NGROUPS_MAX:       return NGROUPS_MAX;
+#ifndef COMPATIBILITY_RUNTIME_BUILD
     case _SC_OPEN_MAX:          return __sysconf_rlimit(RLIMIT_NOFILE);
+#endif
     case _SC_PASS_MAX:          return PASS_MAX;
     case _SC_2_C_BIND:          return _POSIX2_C_BIND;
     case _SC_2_C_DEV:           return _POSIX2_C_DEV;

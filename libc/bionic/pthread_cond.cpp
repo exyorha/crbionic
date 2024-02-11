@@ -103,7 +103,7 @@ int pthread_condattr_destroy(pthread_condattr_t* attr) {
   *attr = 0xdeada11d;
   return 0;
 }
-
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 struct pthread_cond_internal_t {
   atomic_uint state;
 
@@ -249,3 +249,4 @@ extern "C" int pthread_cond_timeout_np(pthread_cond_t* cond_interface,
   return pthread_cond_timedwait_relative_np(cond_interface, mutex, &ts);
 }
 #endif // !defined(__LP64__)
+#endif

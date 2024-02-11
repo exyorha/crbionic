@@ -51,6 +51,9 @@ enum ThreadJoinState {
   THREAD_DETACHED
 };
 
+struct pthread_internal_t;
+
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 struct pthread_internal_t {
   struct pthread_internal_t* next;
   struct pthread_internal_t* prev;
@@ -104,6 +107,7 @@ struct pthread_internal_t {
 #define __BIONIC_DLERROR_BUFFER_SIZE 512
   char dlerror_buffer[__BIONIC_DLERROR_BUFFER_SIZE];
 };
+#endif
 
 __LIBC_HIDDEN__ int __init_thread(pthread_internal_t* thread);
 __LIBC_HIDDEN__ void __init_tls(pthread_internal_t* thread);

@@ -67,6 +67,7 @@ void __init_tls(pthread_internal_t* thread) {
   thread->tls[TLS_SLOT_STACK_GUARD] = reinterpret_cast<void*>(__stack_chk_guard);
 }
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 void __init_alternate_signal_stack(pthread_internal_t* thread) {
   // Create and set an alternate signal stack.
   void* stack_base = mmap(NULL, SIGNAL_STACK_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
@@ -89,6 +90,7 @@ void __init_alternate_signal_stack(pthread_internal_t* thread) {
     prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, ss.ss_sp, ss.ss_size, "thread signal stack");
   }
 }
+#endif
 
 int __init_thread(pthread_internal_t* thread) {
   int error = 0;

@@ -32,6 +32,11 @@ static void* named_anonymous_mmap(size_t length);
 #define MMAP(s) named_anonymous_mmap(s)
 #define DIRECT_MMAP(s) named_anonymous_mmap(s)
 
+#if defined(COMPATIBILITY_RUNTIME_BUILD)
+#define HAVE_MORECORE 0
+#define HAVE_MREMAP 0
+#endif
+
 // Ugly inclusion of C file so that bionic specific #defines configure dlmalloc.
 #include "../upstream-dlmalloc/malloc.c"
 
@@ -52,7 +57,9 @@ static void* named_anonymous_mmap(size_t length) {
   if (map == MAP_FAILED) {
     return map;
   }
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, map, length, "libc_malloc");
+#endif
   return map;
 }
 

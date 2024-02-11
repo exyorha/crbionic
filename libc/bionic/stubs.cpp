@@ -38,6 +38,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 #include "private/android_filesystem_config.h"
 #include "private/ErrnoRestorer.h"
 #include "private/libc_logging.h"
@@ -421,6 +422,7 @@ group* getgrnam(const char* name) { // NOLINT: implementing bad function.
   }
   return app_id_to_group(app_id_from_name(name, true), state);
 }
+#endif
 
 // We don't have an /etc/networks, so all inputs return NULL.
 netent* getnetbyname(const char* /*name*/) {

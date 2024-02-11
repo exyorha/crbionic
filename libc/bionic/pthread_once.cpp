@@ -72,14 +72,19 @@ int pthread_once(pthread_once_t* once_control, void (*init_routine)(void)) {
 
       // Do a store_release indicating that initialization is complete.
       atomic_store_explicit(once_control_ptr, ONCE_INITIALIZATION_COMPLETE, memory_order_release);
-
+#ifndef COMPATIBILITY_RUNTIME_BUILD
       // Wake up any waiters, if any.
       __futex_wake_ex(once_control_ptr, 0, INT_MAX);
+#endif
       return 0;
     }
 
     // The initialization is underway, wait for its finish.
+#ifdef COMPATIBILITY_RUNTIME_BUILD
+    sched_yield();
+#else
     __futex_wait_ex(once_control_ptr, 0, old_value, NULL);
+#endif
     old_value = atomic_load_explicit(once_control_ptr, memory_order_acquire);
   }
 }

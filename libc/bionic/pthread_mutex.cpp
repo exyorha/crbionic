@@ -112,7 +112,7 @@ int pthread_mutexattr_getpshared(const pthread_mutexattr_t* attr, int* pshared) 
     *pshared = (*attr & MUTEXATTR_SHARED_MASK) ? PTHREAD_PROCESS_SHARED : PTHREAD_PROCESS_PRIVATE;
     return 0;
 }
-
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 /* a mutex contains a state value and a owner_tid.
  * The value is implemented as a 16-bit integer holding the following fields:
  *
@@ -644,3 +644,4 @@ int pthread_mutex_destroy(pthread_mutex_t* mutex_interface) {
     }
     return 0;
 }
+#endif

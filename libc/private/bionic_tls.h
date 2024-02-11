@@ -67,7 +67,12 @@ enum {
   TLS_SLOT_STACK_GUARD = 5, // GCC requires this specific slot for x86.
   TLS_SLOT_DLERROR,
 
-  BIONIC_TLS_SLOTS // Must come last!
+  BIONIC_TLS_SLOTS, // Must come last!
+
+#ifdef COMPATIBILITY_RUNTIME_BUILD
+  TLS_SLOT_KEY_DATA = TLS_SLOT_OPENGL,
+  TLS_SLOT_CLEANUP_STACK = TLS_SLOT_OPENGL_API,
+#endif
 };
 
 /*

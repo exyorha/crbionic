@@ -78,6 +78,7 @@ uintptr_t __stack_chk_guard = 0;
 void __libc_init_tls(KernelArgumentBlock& args) {
   __libc_auxv = args.auxv;
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   static pthread_internal_t main_thread;
 
   // Tell the kernel to clear our tid field when we exit, so we're like any other pthread.
@@ -99,10 +100,22 @@ void __libc_init_tls(KernelArgumentBlock& args) {
   __init_thread(&main_thread);
   __init_tls(&main_thread);
   __set_tls(main_thread.tls);
+
   main_thread.tls[TLS_SLOT_BIONIC_PREINIT] = &args;
 
   __init_alternate_signal_stack(&main_thread);
+#else
+  __get_tls()[TLS_SLOT_BIONIC_PREINIT] = &args;
+#endif
 }
+
+#if defined(COMPATIBILITY_RUNTIME_BUILD)
+extern "C" void __compatibility_runtime_init_libc(KernelArgumentBlock* args);
+
+void __compatibility_runtime_init_libc(KernelArgumentBlock* args) {
+  __libc_init_tls(*args);
+}
+#endif
 
 void __libc_init_common(KernelArgumentBlock& args) {
   // Initialize various globals.
@@ -115,6 +128,7 @@ void __libc_init_common(KernelArgumentBlock& args) {
   // AT_RANDOM is a pointer to 16 bytes of randomness on the stack.
   __stack_chk_guard = *reinterpret_cast<uintptr_t*>(getauxval(AT_RANDOM));
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   // Get the main thread from TLS and add it to the thread list.
   pthread_internal_t* main_thread = __get_thread();
   __pthread_internal_add(main_thread);
@@ -122,8 +136,10 @@ void __libc_init_common(KernelArgumentBlock& args) {
   __system_properties_init(); // Requires 'environ'.
 
   __libc_init_vdso();
+#endif
 }
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 __noreturn static void __early_abort(int line) {
   // We can't write to stdout or stderr because we're aborting before we've checked that
   // it's safe for us to use those file descriptors. We probably can't strace either, so
@@ -330,6 +346,7 @@ void __libc_init_AT_SECURE(KernelArgumentBlock& args) {
 
   __initialize_personality();
 }
+#endif
 
 /* This function will be called during normal program termination
  * to run the destructors that are listed in the .fini_array section

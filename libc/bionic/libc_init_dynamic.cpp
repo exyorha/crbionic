@@ -78,7 +78,9 @@ __attribute__((constructor)) static void __libc_preinit() {
 
   // Hooks for various libraries to let them know that we're starting up.
   malloc_debug_init();
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   netdClientInit();
+#endif
 }
 
 __LIBC_HIDDEN__ void __libc_postfini() {

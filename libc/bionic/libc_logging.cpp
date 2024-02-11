@@ -427,6 +427,15 @@ int __libc_format_fd(int fd, const char* format, ...) {
   return os.total;
 }
 
+#ifdef COMPATIBILITY_RUNTIME_BUILD
+extern "C" int __compatibility_runtime_write_log(int priority, const char* tag, const char* msg);
+extern "C" int __compatibility_runtime_log_event(int32_t tag, char type, const void* payload, size_t len);
+
+static inline int __libc_write_log(int priority, const char* tag, const char* msg) {
+  return __compatibility_runtime_write_log(priority, tag, msg);
+}
+
+#else
 static int __libc_write_stderr(const char* tag, const char* msg) {
   int fd = TEMP_FAILURE_RETRY(open("/dev/stderr", O_CLOEXEC | O_WRONLY | O_APPEND));
   if (fd == -1) {
@@ -540,6 +549,7 @@ static int __libc_write_log(int priority, const char* tag, const char* msg) {
   close(main_log_fd);
   return result;
 }
+#endif
 
 int __libc_format_log_va_list(int priority, const char* tag, const char* format, va_list args) {
   char buffer[1024];
@@ -557,6 +567,9 @@ int __libc_format_log(int priority, const char* tag, const char* format, ...) {
 }
 
 static int __libc_android_log_event(int32_t tag, char type, const void* payload, size_t len) {
+#ifdef COMPATIBILITY_RUNTIME_BUILD
+  return __compatibility_runtime_log_event(tag, type, payload, len);
+#else
 #ifdef TARGET_USES_LOGD
   iovec vec[6];
   char log_id = LOG_ID_EVENTS;
@@ -599,6 +612,7 @@ static int __libc_android_log_event(int32_t tag, char type, const void* payload,
   int result = TEMP_FAILURE_RETRY(writev(event_log_fd, vec, sizeof(vec) / sizeof(vec[0])));
   close(event_log_fd);
   return result;
+#endif
 }
 
 void __libc_android_log_event_int(int32_t tag, int value) {
@@ -620,13 +634,14 @@ static void __libc_fatal(const char* format, va_list args) {
   char msg[1024];
   BufferOutputStream os(msg, sizeof(msg));
   out_vformat(os, format, args);
-
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   // Log to stderr for the benefit of "adb shell" users.
   struct iovec iov[2] = {
     { msg, os.total },
     { const_cast<char*>("\n"), 1 },
   };
   TEMP_FAILURE_RETRY(writev(2, iov, 2));
+#endif
 
   // Log to the log for the benefit of regular app developers (whose stdout and stderr are closed).
   __libc_write_log(ANDROID_LOG_FATAL, "libc", msg);

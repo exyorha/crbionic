@@ -20,7 +20,7 @@
 #include <unistd.h>
 
 // x86 has a vdso, but there's nothing useful to us in it.
-#if defined(__aarch64__) || defined(__x86_64__)
+#if (defined(__aarch64__) || defined(__x86_64__)) && !defined(COMPATIBILITY_RUNTIME_BUILD)
 
 #if defined(__aarch64__)
 #define VDSO_CLOCK_GETTIME_SYMBOL "__kernel_clock_gettime"

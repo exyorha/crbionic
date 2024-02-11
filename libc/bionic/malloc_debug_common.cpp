@@ -102,13 +102,13 @@ static const MallocDebug* __libc_malloc_dispatch = &__libc_malloc_default_dispat
 // libc_malloc_debug_leak.so, while functionality for emulator's instrumented
 // allocations is implemented in libc_malloc_debug_qemu.so and can be run inside
 // the emulator only.
-#if !defined(LIBC_STATIC)
+#if !defined(LIBC_STATIC) && !defined(COMPATIBILITY_RUNTIME_BUILD)
 static void* libc_malloc_impl_handle = NULL;
 #endif
 
 
 // The value of libc.debug.malloc.
-#if !defined(LIBC_STATIC)
+#if !defined(LIBC_STATIC) && !defined(COMPATIBILITY_RUNTIME_BUILD)
 static int g_malloc_debug_level = 0;
 #endif
 
@@ -289,7 +289,7 @@ extern "C" void* valloc(size_t bytes) {
 
 // We implement malloc debugging only in libc.so, so the code below
 // must be excluded if we compile this file for static libc.a
-#ifndef LIBC_STATIC
+#if !defined(LIBC_STATIC) && !defined(COMPATIBILITY_RUNTIME_BUILD)
 #include <sys/system_properties.h>
 #include <dlfcn.h>
 #include <stdio.h>
@@ -509,7 +509,7 @@ static void malloc_fini_impl() {
 // This routine is called from __libc_init routines implemented
 // in libc_init_static.c and libc_init_dynamic.c files.
 extern "C" __LIBC_HIDDEN__ void malloc_debug_init() {
-#if !defined(LIBC_STATIC)
+#if !defined(LIBC_STATIC) && !defined(COMPATIBILITY_RUNTIME_BUILD)
   static pthread_once_t malloc_init_once_ctl = PTHREAD_ONCE_INIT;
   if (pthread_once(&malloc_init_once_ctl, malloc_init_impl)) {
     error_log("Unable to initialize malloc_debug component.");
@@ -518,7 +518,7 @@ extern "C" __LIBC_HIDDEN__ void malloc_debug_init() {
 }
 
 extern "C" __LIBC_HIDDEN__ void malloc_debug_fini() {
-#if !defined(LIBC_STATIC)
+#if !defined(LIBC_STATIC) && !defined(COMPATIBILITY_RUNTIME_BUILD)
   static pthread_once_t malloc_fini_once_ctl = PTHREAD_ONCE_INIT;
   if (pthread_once(&malloc_fini_once_ctl, malloc_fini_impl)) {
     error_log("Unable to finalize malloc_debug component.");

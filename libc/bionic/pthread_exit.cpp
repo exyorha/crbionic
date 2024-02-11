@@ -43,22 +43,53 @@ extern "C" void __cxa_thread_finalize();
  *         and thread cancelation
  */
 
+static __pthread_cleanup_t **thread_cleanup_stack(void) {
+#ifdef COMPATIBILITY_RUNTIME_BUILD
+  return reinterpret_cast<__pthread_cleanup_t**>(&__get_tls()[TLS_SLOT_CLEANUP_STACK]);
+#else
+  return __get_thread()->cleanup_stack;
+#endif
+}
+
 void __pthread_cleanup_push(__pthread_cleanup_t* c, __pthread_cleanup_func_t routine, void* arg) {
-  pthread_internal_t* thread = __get_thread();
+  __pthread_cleanup_t **stack = thread_cleanup_stack();
   c->__cleanup_routine = routine;
   c->__cleanup_arg = arg;
-  c->__cleanup_prev = thread->cleanup_stack;
-  thread->cleanup_stack = c;
+  c->__cleanup_prev = *stack;
+  *stack = c;
 }
 
 void __pthread_cleanup_pop(__pthread_cleanup_t* c, int execute) {
-  pthread_internal_t* thread = __get_thread();
-  thread->cleanup_stack = c->__cleanup_prev;
+  __pthread_cleanup_t **stack = thread_cleanup_stack();
+  *stack = c->__cleanup_prev;
   if (execute) {
     c->__cleanup_routine(c->__cleanup_arg);
   }
 }
 
+#ifdef COMPATIBILITY_RUNTIME_BUILD
+extern "C" void __compatibility_runtime_teardown_thread(void);
+
+void __compatibility_runtime_teardown_thread(void) {
+  // Call dtors for thread_local objects first.
+  __cxa_thread_finalize();
+
+  // Call the cleanup handlers.
+
+  __pthread_cleanup_t **stack = thread_cleanup_stack();
+  while (*stack) {
+    __pthread_cleanup_t* c = *stack;
+    *stack = c->__cleanup_prev;
+    c->__cleanup_routine(c->__cleanup_arg);
+  }
+
+  // Call the TLS destructors. It is important to do that before removing this
+  // thread from the global list. This will ensure that if someone else deletes
+  // a TLS key, the corresponding value will be set to NULL in this thread's TLS
+  // space (see pthread_key_delete).
+  pthread_key_clean_all();
+}
+#else
 void pthread_exit(void* return_value) {
   // Call dtors for thread_local objects first.
   __cxa_thread_finalize();
@@ -79,6 +110,7 @@ void pthread_exit(void* return_value) {
   // space (see pthread_key_delete).
   pthread_key_clean_all();
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   if (thread->alternate_signal_stack != NULL) {
     // Tell the kernel to stop using the alternate signal stack.
     stack_t ss;
@@ -90,6 +122,7 @@ void pthread_exit(void* return_value) {
     munmap(thread->alternate_signal_stack, SIGNAL_STACK_SIZE);
     thread->alternate_signal_stack = NULL;
   }
+#endif
 
   ThreadJoinState old_state = THREAD_NOT_JOINED;
   while (old_state == THREAD_NOT_JOINED &&
@@ -124,3 +157,4 @@ void pthread_exit(void* return_value) {
   // the pthread_join caller to clean up.
   __exit(0);
 }
+#endif

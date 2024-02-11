@@ -40,6 +40,9 @@ __BEGIN_DECLS
 
 struct timespec;
 
+#if defined(COMPATIBILITY_RUNTIME_BUILD)
+int __futex(volatile void* ftx, int op, int value, const struct timespec* timeout);
+#else
 static inline __always_inline int __futex(volatile void* ftx, int op, int value, const struct timespec* timeout) {
   // Our generated syscall assembler sets errno, but our callers (pthread functions) don't want to.
   int saved_errno = errno;
@@ -50,6 +53,7 @@ static inline __always_inline int __futex(volatile void* ftx, int op, int value,
   }
   return result;
 }
+#endif
 
 static inline int __futex_wake(volatile void* ftx, int count) {
   return __futex(ftx, FUTEX_WAKE, count, NULL);
