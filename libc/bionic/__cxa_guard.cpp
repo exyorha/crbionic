@@ -18,6 +18,7 @@
 #include <limits.h>
 #undef _USING_LIBCXX  // Prevent using of <atomic>.
 #include <stdatomic.h>
+#include <sched.h>
 
 #include <stddef.h>
 
@@ -109,7 +110,11 @@ extern "C" int __cxa_guard_acquire(_guard_t* gv) {
       }
     }
 
+#ifdef COMPATIBILITY_RUNTIME_BUILD
+    sched_yield();
+#else
     __futex_wait_ex(&gv->state, false, CONSTRUCTION_UNDERWAY_WITH_WAITER, NULL);
+#endif
     old_value = atomic_load_explicit(&gv->state, memory_order_relaxed);
   }
 }
@@ -118,16 +123,20 @@ extern "C" void __cxa_guard_release(_guard_t* gv) {
   // Release fence is used to make all stores performed by the construction function
   // visible in other threads.
   int old_value = atomic_exchange_explicit(&gv->state, CONSTRUCTION_COMPLETE, memory_order_release);
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   if (old_value == CONSTRUCTION_UNDERWAY_WITH_WAITER) {
     __futex_wake_ex(&gv->state, false, INT_MAX);
   }
+#endif
 }
 
 extern "C" void __cxa_guard_abort(_guard_t* gv) {
   // Release fence is used to make all stores performed by the construction function
   // visible in other threads.
   int old_value = atomic_exchange_explicit(&gv->state, CONSTRUCTION_NOT_YET_STARTED, memory_order_release);
+#ifndef COMPATIBILITY_RUNTIME_BUILD
   if (old_value == CONSTRUCTION_UNDERWAY_WITH_WAITER) {
     __futex_wake_ex(&gv->state, false, INT_MAX);
   }
+#endif
 }
