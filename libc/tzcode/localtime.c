@@ -342,6 +342,10 @@ static int
 tzload(register const char* name, register struct state* const sp,
        register const int doextend)
 {
+#ifdef COMPATIBILITY_RUNTIME_BUILD
+    errno = ENOENT;
+    return -1;
+#else
     register const char * p;
     register int          i;
     register int          fid;
@@ -619,6 +623,7 @@ oops:
         free(up);
 #endif /* defined ALL_STATE */
         return -1;
+#endif
 }
 
 static int
@@ -2117,6 +2122,7 @@ posix2time(time_t t)
 
 #endif /* defined STD_INSPIRED */
 
+#ifndef COMPATIBILITY_RUNTIME_BUILD
 // BEGIN android-added
 
 #include <assert.h>
@@ -2312,3 +2318,4 @@ __attribute__((visibility("default"))) time_t mktime_tz(struct tm* const tmp, co
 }
 
 // END android-added
+#endif
