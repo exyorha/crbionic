@@ -1386,6 +1386,13 @@ localtime_r(const time_t * const timep, struct tm * tmp)
     result = localsub(timep, 0L, tmp, NULL); // android-changed: extra parameter.
     _tzUnlock();
 
+    if(result == NULL) {
+        fprintf(stderr, "localtime_r failing, errno %d, timep is %p, time (if not null) is %ld, tm %p, deferring to gmtime and hoping for the best\n", errno, timep, timep ? *timep : 0, tmp);
+        fflush(stderr);
+
+        return gmtime_r(timep, tmp);
+    }
+
     return result;
 }
 
